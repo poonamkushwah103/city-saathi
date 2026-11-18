@@ -596,7 +596,35 @@ async function loadAdminPanel(){
   listings.forEach(item=>{
     const card = document.createElement("div");
     card.className = "listing";
+    const status = document.createElement("p");
+    status.textContent = item.is_approved
+      ? "स्थिति: Approved"
+      : "स्थिति: Pending";
 
+    card.appendChild(status);
+
+    if(!item.is_approved){
+      const approveBtn = document.createElement("button");
+      approveBtn.textContent = "Approve करें";
+
+      approveBtn.onclick = async () => {
+        const {error} = await db
+          .from("listings")
+          .update({is_approved:true})
+          .eq("id",item.id);
+
+        if(error){
+          alert("Approve नहीं हुआ: " + error.message);
+          return;
+        }
+
+        alert("जानकारी Approved हो गई!");
+        await loadAdminPanel();
+        await loadListings();
+      };
+
+      card.appendChild(approveBtn);
+    }
     const title = document.createElement("h3");
     title.textContent = item.title;
 
