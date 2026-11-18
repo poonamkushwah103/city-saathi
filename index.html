@@ -241,7 +241,27 @@ function showUser(user){
   loadListings();
   loadAdminPanel();
 }
+async function loadMyProfile(){
+  if(!currentUser) return;
 
+  const profileBox = document.getElementById("myProfile");
+  profileBox.classList.remove("hidden");
+
+  document.getElementById("profileName").textContent =
+    "नाम: " + (currentUser.user_metadata?.full_name || "उपलब्ध नहीं");
+
+  document.getElementById("profileEmail").textContent =
+    "ईमेल: " + currentUser.email;
+
+  const {data,error} = await db
+    .from("profiles")
+    .select("phone")
+    .eq("id",currentUser.id)
+    .single();
+
+  document.getElementById("profilePhone").textContent =
+    error ? "मोबाइल: उपलब्ध नहीं" : "मोबाइल: " + (data.phone || "नहीं दिया");
+}
 function hideUser(){
   currentUser = null;
 
