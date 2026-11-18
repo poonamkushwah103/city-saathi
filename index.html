@@ -526,22 +526,52 @@ async function loadAdminPanel(){
     usersBox.innerHTML = "";
 
     users.forEach(u=>{
-      const card = document.createElement("div");
-      card.className = "listing";
+  const card = document.createElement("div");
+  card.className = "listing";
 
-      const name = document.createElement("h3");
-      name.textContent = u.full_name || "नाम उपलब्ध नहीं";
+  const name = document.createElement("h3");
+  name.textContent = u.full_name || "नाम उपलब्ध नहीं";
 
-      const phone = document.createElement("p");
-      phone.textContent = "मोबाइल: " + (u.phone || "नहीं दिया");
+  const phone = document.createElement("p");
+  phone.textContent = "मोबाइल: " + (u.phone || "नहीं दिया");
 
-      const role = document.createElement("p");
-      role.textContent = "Role: " + u.role;
+  const role = document.createElement("p");
+  role.textContent = "Role: " + u.role;
 
-      card.append(name,phone,role);
-      usersBox.appendChild(card);
+  const status = document.createElement("p");
+  status.textContent = u.is_blocked ? "स्थिति: Blocked" : "स्थिति: Active";
+
+  const blockBtn = document.createElement("button");
+  blockBtn.textContent = u.is_blocked ? "Active करें" : "Block करें";
+  blockBtn.className = u.is_blocked ? "" : "danger";
+
+  blockBtn.onclick = async () => {
+    const newStatus = !u.is_blocked;
+
+    if (!confirm(newStatus ? "क्या इस यूज़र को Block करना है?" : "क्या इस यूज़र को Active करना है?")) return;
+
+    const { error } = await db.rpc("set_user_blocked", {
+      p_target_user_id: u.id,
+      p_blocked: newStatus
     });
+
+    if (error) {
+      alert("बदलाव नहीं हुआ: " + error.message);
+      return;
+    }
+
+    alert("यूज़र की स्थिति बदल गई!");
+    await loadAdminPanel();
+  };
+
+  card.append(name, phone, role, status);
+
+  if (u.id !== currentUser.id) {
+    card.append(blockBtn);
   }
+
+  usersBox.appendChild(card);
+});
 
   // LOAD ALL ADMIN LISTINGS
   listingsBox.textContent = "जानकारी लोड हो रही है...";
