@@ -515,7 +515,7 @@ async function loadAdminPanel(){
 
   const {data:users,error:usersError} = await db
     .from("profiles")
-    .select("full_name,phone,role,created_at")
+.select("id,full_name,phone,role,created_at,is_blocked")
     .order("created_at",{ascending:false});
 
   if(usersError){
