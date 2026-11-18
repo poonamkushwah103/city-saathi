@@ -1,2 +1,639 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITY SAATHI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#222}
+header{background:#0759a5;color:white;text-align:center;padding:24px 15px}
+header h1{margin:0;font-size:29px}
+header p{margin:8px 0 0}
+button{border:0;border-radius:8px;padding:12px 17px;background:#0759a5;color:white;font-size:15px;cursor:pointer;margin:4px}
+input,select,textarea{width:100%;padding:13px;margin:7px 0 13px;border:1px solid #ddd;border-radius:8px;font-size:15px;background:white}
+textarea{min-height:80px;resize:vertical}
+.container{max-width:850px;margin:auto;padding:15px}
+.panel{background:white;padding:18px;border-radius:12px;margin:15px 0;box-shadow:0 2px 10px #0000000c}
+h2{font-size:20px;margin-top:5px}
+h3{margin:8px 0;color:#0759a5}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1}
+.secondary{background:#e7eff8;color:#0759a5}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.category{background:white;border-radius:12px;padding:18px 8px;text-align:center;box-shadow:0 2px 8px #0000000c}
+.category span{font-size:29px;display:block;margin-bottom:8px}
+.category strong{color:#0759a5}
+.listing{border:1px solid #e5eaf0;padding:14px;border-radius:10px;margin:12px 0;background:white}
+.small{font-size:13px;color:#666}
+.hidden{display:none!important}
+#message{padding:10px;border-radius:8px;margin:10px 0;display:none;background:#e7eff8}
+.danger{background:#c62828}
+footer{text-align:center;background:#0759a5;color:white;padding:20px;margin-top:25px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🏙️ CITY SAATHI</h1>
+<p>आपके शहर का अपना साथी</p>
+</header>
+
+<div class="container">
+
+<div id="message"></div>
+
+<section class="panel">
+<h2>🔐 अकाउंट</h2>
+
+<div id="authArea">
+<div class="tabs">
+<button id="loginTab" onclick="showAuth('login')">Login</button>
+<button class="secondary" id="signupTab" onclick="showAuth('signup')">Signup</button>
+</div>
+
+<form id="signupForm" class="hidden">
+<label>पूरा नाम</label>
+<input id="fullName" required placeholder="अपना नाम लिखें">
+
+<label>मोबाइल नंबर</label>
+<input id="phone" type="tel" placeholder="मोबाइल नंबर">
+
+<label>Email</label>
+<input id="signupEmail" type="email" required placeholder="Email">
+
+<label>Password</label>
+<input id="signupPassword" type="password" required minlength="6" placeholder="कम से कम 6 अक्षर">
+
+<button type="submit">नया अकाउंट बनाएँ</button>
+</form>
+
+<form id="loginForm">
+<label>Email</label>
+<input id="loginEmail" type="email" required placeholder="Email">
+
+<label>Password</label>
+<input id="loginPassword" type="password" required placeholder="Password">
+
+<button type="submit">Login करें</button>
+</form>
+</div>
+
+<div id="userArea" class="hidden">
+<p>स्वागत है, <strong id="userName"></strong>!</p>
+<p class="small" id="userEmail"></p>
+<button onclick="logout()">Logout</button>
+</div>
+</section>
+
+<section>
+<h2>हमारी सेवाएँ</h2>
+<div class="grid">
+<div class="category"><span>🏪</span><strong>दुकानें</strong></div>
+<div class="category"><span>💼</span><strong>नौकरी</strong></div>
+<div class="category"><span>🏠</span><strong>मकान किराया</strong></div>
+<div class="category"><span>🔧</span><strong>स्थानीय सेवाएँ</strong></div>
+<div class="category"><span>📰</span><strong>शहर की खबरें</strong></div>
+<div class="category"><span>🛍️</span><strong>अपना बाजार</strong></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>➕ अपनी जानकारी जोड़ें</h2>
+<p class="small">जानकारी जोड़ने के लिए पहले Login करें।</p>
+
+<form id="listingForm">
+<label>जानकारी का शीर्षक</label>
+<input id="listingTitle" required placeholder="जैसे: शर्मा किराना स्टोर">
+
+<label>कैटेगरी</label>
+<select id="listingCategory" required>
+<option value="">कैटेगरी चुनें</option>
+<option>दुकानें</option>
+<option>नौकरी</option>
+<option>मकान किराया</option>
+<option>स्थानीय सेवाएँ</option>
+<option>अपना बाजार</option>
+</select>
+
+<label>विवरण</label>
+<textarea id="listingDescription" placeholder="पूरी जानकारी लिखें"></textarea>
+
+<label>शहर</label>
+<input id="listingCity" placeholder="शहर का नाम">
+
+<label>संपर्क नंबर</label>
+<input id="listingPhone" type="tel" placeholder="मोबाइल नंबर">
+
+<button type="submit">जानकारी प्रकाशित करें</button>
+</form>
+</section>
+
+<section class="panel">
+<h2>🔎 शहर में खोजें</h2>
+<input id="searchBox" placeholder="दुकान, नौकरी या मकान खोजें..." oninput="loadListings()">
+
+<select id="filterCategory" onchange="loadListings()">
+<option value="">सभी कैटेगरी</option>
+<option>दुकानें</option>
+<option>नौकरी</option>
+<option>मकान किराया</option>
+<option>स्थानीय सेवाएँ</option>
+<option>अपना बाजार</option>
+</select>
+
+<h2>नई जानकारी</h2>
+<div id="listings">जानकारी लोड हो रही है...</div>
+</section>
+
+<!-- ADMIN PANEL -->
+<section id="adminPanel" class="panel hidden">
+<h2>🛡️ CITY SAATHI Admin Panel</h2>
+
+<h3>👥 CITY SAATHI के यूज़र्स</h3>
+<div id="adminUsers">यूज़र्स लोड हो रहे हैं...</div>
+
+<h3>सभी प्रकाशित जानकारियाँ</h3>
+<div id="adminListings">जानकारी लोड हो रही है...</div>
+</section>
+
+</div>
+
+<footer>
+<p>© 2026 CITY SAATHI</p>
+<p>आपके शहर का अपना साथी ❤️</p>
+</footer>
+
+<script>
 const SUPABASE_URL = "https://kynflshbbyumerfymkpm.supabase.co/rest/v1/";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4VNH1r2Gn5f0Hk_pc1GAqA_oEPm3D_S";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+let currentUser = null;
+
+function message(text){
+  const box = document.getElementById("message");
+  box.textContent = text;
+  box.style.display = "block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function clearMessage(){
+  document.getElementById("message").style.display = "none";
+}
+
+function showAuth(type){
+  clearMessage();
+
+  document.getElementById("loginForm").classList.toggle("hidden",type !== "login");
+  document.getElementById("signupForm").classList.toggle("hidden",type !== "signup");
+
+  document.getElementById("loginTab").className =
+    type === "login" ? "" : "secondary";
+
+  document.getElementById("signupTab").className =
+    type === "signup" ? "" : "secondary";
+}
+
+async function ensureProfile(user){
+  const {error} = await db.from("profiles").upsert({
+    id:user.id,
+    full_name:user.user_metadata?.full_name || user.email,
+    phone:user.user_metadata?.phone || null,
+    role:"user"
+  },{
+    onConflict:"id",
+    ignoreDuplicates:true
+  });
+
+  if(error) console.error("Profile error:",error.message);
+}
+
+function showUser(user){
+  currentUser = user;
+
+  document.getElementById("authArea").classList.add("hidden");
+  document.getElementById("userArea").classList.remove("hidden");
+
+  document.getElementById("userName").textContent =
+    user.user_metadata?.full_name || user.email;
+
+  document.getElementById("userEmail").textContent = user.email;
+
+  loadListings();
+  loadAdminPanel();
+}
+
+function hideUser(){
+  currentUser = null;
+
+  document.getElementById("authArea").classList.remove("hidden");
+  document.getElementById("userArea").classList.add("hidden");
+  document.getElementById("adminPanel").classList.add("hidden");
+
+  loadListings();
+}
+
+// SIGNUP
+document.getElementById("signupForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  clearMessage();
+
+  const name = document.getElementById("fullName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value;
+
+  const {data,error} = await db.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{
+        full_name:name,
+        phone:phone
+      }
+    }
+  });
+
+  if(error){
+    message(error.message);
+    return;
+  }
+
+  if(data.user && data.session){
+    await ensureProfile(data.user);
+    showUser(data.user);
+    message("आपका अकाउंट बन गया है!");
+  }else{
+    message("अकाउंट बन गया है। Email में confirmation link खोलें, फिर Login करें।");
+  }
+});
+
+// LOGIN
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  clearMessage();
+
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  const {data,error} = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if(error){
+    message(error.message);
+    return;
+  }
+
+  await ensureProfile(data.user);
+  showUser(data.user);
+  message("Login सफल हुआ!");
+});
+
+// LOGOUT
+async function logout(){
+  const {error} = await db.auth.signOut();
+
+  if(error){
+    message(error.message);
+    return;
+  }
+
+  hideUser();
+  message("आप Logout हो गए हैं।");
+}
+
+// ADD LISTING
+document.getElementById("listingForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  clearMessage();
+
+  if(!currentUser){
+    message("जानकारी जोड़ने के लिए पहले Login करें।");
+    return;
+  }
+
+  const record = {
+    user_id:currentUser.id,
+    title:document.getElementById("listingTitle").value.trim(),
+    category:document.getElementById("listingCategory").value,
+    description:document.getElementById("listingDescription").value.trim(),
+    city:document.getElementById("listingCity").value.trim(),
+    phone:document.getElementById("listingPhone").value.trim()
+  };
+
+  const {error} = await db.from("listings").insert(record);
+
+  if(error){
+    message(error.message);
+    return;
+  }
+
+  e.target.reset();
+  message("आपकी जानकारी प्रकाशित हो गई!");
+  loadListings();
+});
+
+// LOAD PUBLIC LISTINGS
+async function loadListings(){
+  const box = document.getElementById("listings");
+
+  const search = document.getElementById("searchBox").value.trim();
+  const category = document.getElementById("filterCategory").value;
+
+  box.textContent = "जानकारी लोड हो रही है...";
+
+  let query = db.from("listings")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if(category){
+    query = query.eq("category",category);
+  }
+
+  if(search){
+    query = query.or(
+      `title.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%`
+    );
+  }
+
+  const {data,error} = await query;
+
+  if(error){
+    box.textContent = "जानकारी लोड नहीं हो सकी: " + error.message;
+    return;
+  }
+
+  if(!data || data.length === 0){
+    box.textContent = "अभी कोई जानकारी उपलब्ध नहीं है।";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  data.forEach(item=>{
+    const card = document.createElement("article");
+    card.className = "listing";
+
+    const title = document.createElement("h3");
+    title.textContent = item.title;
+
+    const categoryText = document.createElement("p");
+    categoryText.textContent = item.category;
+
+    const description = document.createElement("p");
+    description.textContent = item.description || "";
+
+    const city = document.createElement("p");
+    city.textContent = "📍 " + (item.city || "");
+
+    const phone = document.createElement("p");
+    phone.textContent = "📞 " + (item.phone || "");
+
+    const date = document.createElement("p");
+    date.className = "small";
+    date.textContent =
+      new Date(item.created_at).toLocaleDateString("hi-IN");
+
+    card.append(
+      title,
+      categoryText,
+      description,
+      city,
+      phone,
+      date
+    );
+
+    // केवल अपनी जानकारी के Edit और Delete बटन
+    if(currentUser && currentUser.id === item.user_id){
+
+      const edit = document.createElement("button");
+      edit.textContent = "Edit करें";
+
+      edit.onclick = async ()=>{
+        const newTitle = prompt("नई जानकारी का नाम:",item.title);
+        if(newTitle === null || !newTitle.trim()) return;
+
+        const newCategory = prompt("कैटेगरी:",item.category);
+        if(newCategory === null || !newCategory.trim()) return;
+
+        const newDescription = prompt("विवरण:",item.description || "");
+        if(newDescription === null) return;
+
+        const newCity = prompt("शहर:",item.city || "");
+        if(newCity === null) return;
+
+        const newPhone = prompt("मोबाइल नंबर:",item.phone || "");
+        if(newPhone === null) return;
+
+        const {error} = await db.from("listings")
+          .update({
+            title:newTitle.trim(),
+            category:newCategory.trim(),
+            description:newDescription,
+            city:newCity,
+            phone:newPhone
+          })
+          .eq("id",item.id)
+          .eq("user_id",currentUser.id);
+
+        if(error){
+          alert("जानकारी अपडेट नहीं हुई: " + error.message);
+          return;
+        }
+
+        alert("जानकारी अपडेट हो गई!");
+        loadListings();
+      };
+
+      const del = document.createElement("button");
+      del.textContent = "जानकारी हटाएँ";
+      del.className = "danger";
+
+      del.onclick = async ()=>{
+        if(!confirm("क्या आप अपनी जानकारी हटाना चाहते हैं?")) return;
+
+        const {error} = await db.from("listings")
+          .delete()
+          .eq("id",item.id)
+          .eq("user_id",currentUser.id);
+
+        if(error){
+          alert("जानकारी नहीं हटी: " + error.message);
+          return;
+        }
+
+        alert("जानकारी हटा दी गई!");
+        loadListings();
+      };
+
+      card.append(edit,del);
+    }
+
+    box.appendChild(card);
+  });
+}
+
+// ADMIN PANEL
+async function loadAdminPanel(){
+
+  const panel = document.getElementById("adminPanel");
+  const usersBox = document.getElementById("adminUsers");
+  const listingsBox = document.getElementById("adminListings");
+
+  panel.classList.add("hidden");
+
+  if(!currentUser) return;
+
+  const {data:profile,error:profileError} = await db
+    .from("profiles")
+    .select("role")
+    .eq("id",currentUser.id)
+    .single();
+
+  if(profileError || !profile || profile.role !== "admin"){
+    return;
+  }
+
+  panel.classList.remove("hidden");
+
+  // LOAD USERS
+  usersBox.textContent = "यूज़र्स लोड हो रहे हैं...";
+
+  const {data:users,error:usersError} = await db
+    .from("profiles")
+    .select("full_name,phone,role,created_at")
+    .order("created_at",{ascending:false});
+
+  if(usersError){
+    usersBox.textContent = "यूज़र्स लोड नहीं हुए: " + usersError.message;
+  }else if(!users || users.length === 0){
+    usersBox.textContent = "अभी कोई यूज़र नहीं है।";
+  }else{
+    usersBox.innerHTML = "";
+
+    users.forEach(u=>{
+      const card = document.createElement("div");
+      card.className = "listing";
+
+      const name = document.createElement("h3");
+      name.textContent = u.full_name || "नाम उपलब्ध नहीं";
+
+      const phone = document.createElement("p");
+      phone.textContent = "मोबाइल: " + (u.phone || "नहीं दिया");
+
+      const role = document.createElement("p");
+      role.textContent = "Role: " + u.role;
+
+      card.append(name,phone,role);
+      usersBox.appendChild(card);
+    });
+  }
+
+  // LOAD ALL ADMIN LISTINGS
+  listingsBox.textContent = "जानकारी लोड हो रही है...";
+
+  const {data:listings,error:listError} = await db
+    .from("listings")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(listError){
+    listingsBox.textContent = "जानकारी लोड नहीं हुई: " + listError.message;
+    return;
+  }
+
+  if(!listings || listings.length === 0){
+    listingsBox.textContent = "अभी कोई प्रकाशित जानकारी नहीं है।";
+    return;
+  }
+
+  listingsBox.innerHTML = "";
+
+  listings.forEach(item=>{
+    const card = document.createElement("div");
+    card.className = "listing";
+
+    const title = document.createElement("h3");
+    title.textContent = item.title;
+
+    const details = document.createElement("p");
+    details.textContent =
+      item.category + " | " +
+      (item.city || "") + " | " +
+      (item.phone || "");
+
+    const description = document.createElement("p");
+    description.textContent = item.description || "";
+
+    const del = document.createElement("button");
+    del.textContent = "जानकारी हटाएँ";
+    del.className = "danger";
+
+    del.onclick = async ()=>{
+      if(!confirm("क्या आप यह जानकारी हटाना चाहते हैं?")) return;
+
+      const {error} = await db.from("listings")
+        .delete()
+        .eq("id",item.id);
+
+      if(error){
+        alert("जानकारी नहीं हटी: " + error.message);
+        return;
+      }
+
+      alert("जानकारी हटा दी गई!");
+      loadAdminPanel();
+      loadListings();
+    };
+
+    card.append(title,details,description,del);
+    listingsBox.appendChild(card);
+  });
+}
+
+// START APP
+async function startApp(){
+
+  const {data,error} = await db.auth.getSession();
+
+  if(error){
+    message("Session लोड नहीं हुआ: " + error.message);
+    return;
+  }
+
+  if(data.session){
+    await ensureProfile(data.session.user);
+    showUser(data.session.user);
+  }
+
+  loadListings();
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+
+  if(event === "SIGNED_OUT"){
+    hideUser();
+  }
+
+});
+
+startApp();
+
+</script>
+</body>
+</html>
+
