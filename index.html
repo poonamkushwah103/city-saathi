@@ -416,7 +416,14 @@ async function loadListings(){
       phone,
       date
     );
+    if(currentUser && currentUser.id === item.user_id){
+      const status = document.createElement("p");
+      status.textContent = item.is_approved
+        ? "स्थिति: Approved ✅"
+        : "स्थिति: Pending 🟡";
 
+      card.appendChild(status);
+    }
     // केवल अपनी जानकारी के Edit और Delete बटन
     if(currentUser && currentUser.id === item.user_id){
 
