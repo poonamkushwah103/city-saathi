@@ -203,6 +203,7 @@ function showUser(user){
   document.getElementById("userName").textContent=
     user.user_metadata?.full_name || user.email;
   document.getElementById("userEmail").textContent=user.email;
+  loadAdminPanel();
 }
 
 function hideUser(){
