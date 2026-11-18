@@ -318,122 +318,30 @@ async function loadListings(){
     return;
   }
 
-  box.innerHTML=data.map(item=>`
-    <article class="listing">
-      <h3>${safe(item.title)}</h3>
-      <p><strong>${safe(item.category)}</strong></p>
-      <p>${safe(item.description)}</p>
-      <p>📍 ${safe(item.city)}</p>
-      <p>📞 ${safe(item.phone)}</p>
-      <p class="small">${new Date(item.created_at).toLocaleDateString("hi-IN")}</p>
-    </article>
-  `).join("");
-}
-
-async function startApp(){
-  const {data}=await db.auth.getSession();
-
-  if(data.session){
-    await ensureProfile(data.session.user);
-    showUser(data.session.user);
-  }
-
-  loadListings();
-}
-
-db.auth.onAuthStateChange((event,session)=>{
-  if(event==="SIGNED_OUT") hideUser();
-});
-
-startApp();
-</script>
-<div id="adminPanel" class="hidden">
-  <h2>🛡️ CITY SAATHI Admin Panel</h2>
-  <h3>सभी प्रकाशित जानकारियाँ</h3>
-  <div id="adminListings">लोड हो रहा है...</div>
-  <h3>👥 CITY SAATHI के यूज़र्स</h3>
-<div id="adminUsers">यूज़र्स लोड हो रहे हैं...</div>
-</div>
-
-<script>
-async function loadAdminPanel() {
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return;
-
-  const { data: profile } = await db
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "admin") return;
-
-  document.getElementById("adminPanel").classList.remove("hidden");
-const { data: users, error: usersError } = await db
-  .from("profiles")
-  .select("full_name, phone, role, created_at")
-  .order("created_at", { ascending: false });
-
-const usersBox = document.getElementById("adminUsers");
-
-if (usersError) {
-  usersBox.textContent = "यूज़र्स लोड नहीं हुए।";
-} else {
-  usersBox.innerHTML = "";
-
-  users.forEach(u => {
-    const card = document.createElement("div");
-    card.style.border = "1px solid #ccc";
-    card.style.padding = "10px";
-    card.style.margin = "8px 0";
-
-    const name = document.createElement("h4");
-    name.textContent = u.full_name || "नाम उपलब्ध नहीं";
-
-    const phone = document.createElement("p");
-    phone.textContent = "मोबाइल: " + (u.phone || "नहीं दिया");
-
-    const role = document.createElement("p");
-    role.textContent = "Role: " + u.role;
-
-    card.append(name, phone, role);
-    usersBox.appendChild(card);
-  });
-}
-  const { data, error } = await db
-    .from("listings")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const box = document.getElementById("adminListings");
-
-  if (error) {
-    box.textContent = "जानकारी लोड नहीं हुई।";
-    return;
-  }
-
-  box.innerHTML = "";
-
   
+box.innerHTML = "";
+
 data.forEach(item => {
-  const card = document.createElement("div");
-  card.style.border = "1px solid #ccc";
-  card.style.padding = "12px";
-  card.style.margin = "10px 0";
+  const card = document.createElement("article");
+  card.className = "listing";
 
   const title = document.createElement("h3");
   title.textContent = item.title;
 
-  const details = document.createElement("p");
-  details.textContent =
-    item.category + " | " + (item.city || "") + " | " + (item.phone || "");
+  const category = document.createElement("p");
+  category.textContent = item.category;
 
   const description = document.createElement("p");
   description.textContent = item.description || "";
 
-  card.append(title, details, description);
+  const city = document.createElement("p");
+  city.textContent = "📍 " + (item.city || "");
 
-  // केवल अपनी जानकारी पर Edit और Delete दिखेंगे
+  const phone = document.createElement("p");
+  phone.textContent = "📞 " + (item.phone || "");
+
+  card.append(title, category, description, city, phone);
+
   if (currentUser && currentUser.id === item.user_id) {
     const edit = document.createElement("button");
     edit.textContent = "Edit करें";
@@ -442,32 +350,19 @@ data.forEach(item => {
       const newTitle = prompt("नई जानकारी का नाम:", item.title);
       if (newTitle === null || !newTitle.trim()) return;
 
-      const newCategory = prompt("Category:", item.category);
-      if (newCategory === null || !newCategory.trim()) return;
-
       const newDescription = prompt("विवरण:", item.description || "");
       if (newDescription === null) return;
 
-      const newCity = prompt("शहर:", item.city || "");
-      if (newCity === null) return;
-
-      const newPhone = prompt("मोबाइल:", item.phone || "");
-      if (newPhone === null) return;
-
-      const { error } = await db
-        .from("listings")
+      const { error } = await db.from("listings")
         .update({
           title: newTitle.trim(),
-          category: newCategory.trim(),
-          description: newDescription,
-          city: newCity,
-          phone: newPhone
+          description: newDescription
         })
         .eq("id", item.id)
         .eq("user_id", currentUser.id);
 
       if (error) {
-        alert("जानकारी अपडेट नहीं हुई: " + error.message);
+        alert("अपडेट नहीं हुआ: " + error.message);
         return;
       }
 
@@ -481,8 +376,7 @@ data.forEach(item => {
     del.onclick = async () => {
       if (!confirm("क्या आप अपनी जानकारी हटाना चाहते हैं?")) return;
 
-      const { error } = await db
-        .from("listings")
+      const { error } = await db.from("listings")
         .delete()
         .eq("id", item.id)
         .eq("user_id", currentUser.id);
@@ -499,6 +393,10 @@ data.forEach(item => {
     card.append(edit, del);
   }
 
+  const date = document.createElement("p");
+  date.className = "small";
+  date.textContent = new Date(item.created_at).toLocaleDateString("hi-IN");
+  card.appendChild(date);
+
   box.appendChild(card);
 });
-}
