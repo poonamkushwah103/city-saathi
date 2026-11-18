@@ -346,6 +346,83 @@ db.auth.onAuthStateChange((event,session)=>{
 
 startApp();
 </script>
+<div id="adminPanel" class="hidden">
+  <h2>🛡️ CITY SAATHI Admin Panel</h2>
+  <h3>सभी प्रकाशित जानकारियाँ</h3>
+  <div id="adminListings">लोड हो रहा है...</div>
+</div>
 
+<script>
+async function loadAdminPanel() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  const { data: profile } = await db
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.role !== "admin") return;
+
+  document.getElementById("adminPanel").classList.remove("hidden");
+
+  const { data, error } = await db
+    .from("listings")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const box = document.getElementById("adminListings");
+
+  if (error) {
+    box.textContent = "जानकारी लोड नहीं हुई।";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  data.forEach(item => {
+    const card = document.createElement("div");
+    card.style.border = "1px solid #ccc";
+    card.style.padding = "12px";
+    card.style.margin = "10px 0";
+
+    const title = document.createElement("h3");
+    title.textContent = item.title;
+
+    const details = document.createElement("p");
+    details.textContent =
+      item.category + " | " + (item.city || "") + " | " + (item.phone || "");
+
+    const description = document.createElement("p");
+    description.textContent = item.description || "";
+
+    const del = document.createElement("button");
+    del.textContent = "जानकारी हटाएँ";
+
+    del.onclick = async () => {
+      if (!confirm("क्या आप यह जानकारी हटाना चाहते हैं?")) return;
+
+      const { error } = await db
+        .from("listings")
+        .delete()
+        .eq("id", item.id);
+
+      if (error) {
+        alert("जानकारी नहीं हटी।");
+        return;
+      }
+
+      card.remove();
+      alert("जानकारी हटा दी गई।");
+    };
+
+    card.append(title, details, description, del);
+    box.appendChild(card);
+  });
+}
+
+loadAdminPanel();
+</script>
 </body>
 </html>
