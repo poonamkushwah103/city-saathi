@@ -414,48 +414,91 @@ if (usersError) {
 
   box.innerHTML = "";
 
-  data.forEach(item => {
-    const card = document.createElement("div");
-    card.style.border = "1px solid #ccc";
-    card.style.padding = "12px";
-    card.style.margin = "10px 0";
+  
+data.forEach(item => {
+  const card = document.createElement("div");
+  card.style.border = "1px solid #ccc";
+  card.style.padding = "12px";
+  card.style.margin = "10px 0";
 
-    const title = document.createElement("h3");
-    title.textContent = item.title;
+  const title = document.createElement("h3");
+  title.textContent = item.title;
 
-    const details = document.createElement("p");
-    details.textContent =
-      item.category + " | " + (item.city || "") + " | " + (item.phone || "");
+  const details = document.createElement("p");
+  details.textContent =
+    item.category + " | " + (item.city || "") + " | " + (item.phone || "");
 
-    const description = document.createElement("p");
-    description.textContent = item.description || "";
+  const description = document.createElement("p");
+  description.textContent = item.description || "";
+
+  card.append(title, details, description);
+
+  // केवल अपनी जानकारी पर Edit और Delete दिखेंगे
+  if (currentUser && currentUser.id === item.user_id) {
+    const edit = document.createElement("button");
+    edit.textContent = "Edit करें";
+
+    edit.onclick = async () => {
+      const newTitle = prompt("नई जानकारी का नाम:", item.title);
+      if (newTitle === null || !newTitle.trim()) return;
+
+      const newCategory = prompt("Category:", item.category);
+      if (newCategory === null || !newCategory.trim()) return;
+
+      const newDescription = prompt("विवरण:", item.description || "");
+      if (newDescription === null) return;
+
+      const newCity = prompt("शहर:", item.city || "");
+      if (newCity === null) return;
+
+      const newPhone = prompt("मोबाइल:", item.phone || "");
+      if (newPhone === null) return;
+
+      const { error } = await db
+        .from("listings")
+        .update({
+          title: newTitle.trim(),
+          category: newCategory.trim(),
+          description: newDescription,
+          city: newCity,
+          phone: newPhone
+        })
+        .eq("id", item.id)
+        .eq("user_id", currentUser.id);
+
+      if (error) {
+        alert("जानकारी अपडेट नहीं हुई: " + error.message);
+        return;
+      }
+
+      alert("जानकारी अपडेट हो गई!");
+      loadListings();
+    };
 
     const del = document.createElement("button");
     del.textContent = "जानकारी हटाएँ";
 
     del.onclick = async () => {
-      if (!confirm("क्या आप यह जानकारी हटाना चाहते हैं?")) return;
+      if (!confirm("क्या आप अपनी जानकारी हटाना चाहते हैं?")) return;
 
       const { error } = await db
         .from("listings")
         .delete()
-        .eq("id", item.id);
+        .eq("id", item.id)
+        .eq("user_id", currentUser.id);
 
       if (error) {
-        alert("जानकारी नहीं हटी।");
+        alert("जानकारी नहीं हटी: " + error.message);
         return;
       }
 
-      card.remove();
-      alert("जानकारी हटा दी गई।");
+      alert("जानकारी हटा दी गई!");
+      loadListings();
     };
 
-    card.append(title, details, description, del);
-    box.appendChild(card);
-  });
-}
+    card.append(edit, del);
+  }
 
-loadAdminPanel();
-</script>
-</body>
-</html>
+  box.appendChild(card);
+});
+}
