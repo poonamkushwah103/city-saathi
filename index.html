@@ -369,7 +369,37 @@ async function loadAdminPanel() {
   if (!profile || profile.role !== "admin") return;
 
   document.getElementById("adminPanel").classList.remove("hidden");
+const { data: users, error: usersError } = await db
+  .from("profiles")
+  .select("full_name, phone, role, created_at")
+  .order("created_at", { ascending: false });
 
+const usersBox = document.getElementById("adminUsers");
+
+if (usersError) {
+  usersBox.textContent = "यूज़र्स लोड नहीं हुए।";
+} else {
+  usersBox.innerHTML = "";
+
+  users.forEach(u => {
+    const card = document.createElement("div");
+    card.style.border = "1px solid #ccc";
+    card.style.padding = "10px";
+    card.style.margin = "8px 0";
+
+    const name = document.createElement("h4");
+    name.textContent = u.full_name || "नाम उपलब्ध नहीं";
+
+    const phone = document.createElement("p");
+    phone.textContent = "मोबाइल: " + (u.phone || "नहीं दिया");
+
+    const role = document.createElement("p");
+    role.textContent = "Role: " + u.role;
+
+    card.append(name, phone, role);
+    usersBox.appendChild(card);
+  });
+}
   const { data, error } = await db
     .from("listings")
     .select("*")
