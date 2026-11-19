@@ -492,7 +492,24 @@ async function loadListings(){
       new Date(item.created_at).toLocaleDateString("hi-IN");
 
     card.append(title,categoryText,description,city,phone,date);
+if(item.phone){
+  const whatsapp = document.createElement("a");
+  const number = item.phone.replace(/\D/g,"");
 
+  whatsapp.href = "https://wa.me/91" + number;
+  whatsapp.textContent = "🟢 WhatsApp पर संपर्क करें";
+  whatsapp.target = "_blank";
+  whatsapp.rel = "noopener noreferrer";
+  whatsapp.style.display = "inline-block";
+  whatsapp.style.margin = "10px 0";
+  whatsapp.style.padding = "10px";
+  whatsapp.style.background = "#25D366";
+  whatsapp.style.color = "white";
+  whatsapp.style.textDecoration = "none";
+  whatsapp.style.borderRadius = "6px";
+
+  card.appendChild(whatsapp);
+}
     if(currentUser && currentUser.id === item.user_id){
       const status = document.createElement("p");
       status.textContent = item.is_approved
