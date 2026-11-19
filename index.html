@@ -229,7 +229,7 @@ async function ensureProfile(user){
 
 function showUser(user){
   currentUser = user;
-
+document.getElementById("loginNotice").classList.add("hidden");
   document.getElementById("authArea").classList.add("hidden");
   document.getElementById("userArea").classList.remove("hidden");
 
