@@ -417,6 +417,7 @@ document.getElementById("listingForm").addEventListener("submit", async e => {
 });
 
 
+
 // LOAD PUBLIC LISTINGS
 async function loadListings(){
   const box = document.getElementById("listings");
@@ -459,6 +460,17 @@ async function loadListings(){
     const card = document.createElement("article");
     card.className = "listing";
 
+    if(item.image_url){
+      const img = document.createElement("img");
+      img.src = item.image_url;
+      img.alt = item.title || "जानकारी की फोटो";
+      img.style.width = "100%";
+      img.style.maxHeight = "220px";
+      img.style.objectFit = "cover";
+      img.style.borderRadius = "10px";
+      card.appendChild(img);
+    }
+
     const title = document.createElement("h3");
     title.textContent = item.title;
 
@@ -479,14 +491,8 @@ async function loadListings(){
     date.textContent =
       new Date(item.created_at).toLocaleDateString("hi-IN");
 
-    card.append(
-      title,
-      categoryText,
-      description,
-      city,
-      phone,
-      date
-    );
+    card.append(title,categoryText,description,city,phone,date);
+
     if(currentUser && currentUser.id === item.user_id){
       const status = document.createElement("p");
       status.textContent = item.is_approved
@@ -495,9 +501,8 @@ async function loadListings(){
 
       card.appendChild(status);
     }
-    // केवल अपनी जानकारी के Edit और Delete बटन
-    if(currentUser && currentUser.id === item.user_id){
 
+    if(currentUser && currentUser.id === item.user_id){
       const edit = document.createElement("button");
       edit.textContent = "Edit करें";
 
@@ -564,6 +569,7 @@ async function loadListings(){
     box.appendChild(card);
   });
 }
+
 
 // ADMIN PANEL
 async function loadAdminPanel(){
