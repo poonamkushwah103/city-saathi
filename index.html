@@ -266,6 +266,7 @@ async function loadMyProfile(){
 function hideUser(){
   currentUser = null;
 document.getElementById("loginNotice").classList.remove("hidden");
+  document.getElementById("loginNotice").style.display = "block";
   document.getElementById("authArea").classList.remove("hidden");
   document.getElementById("userArea").classList.add("hidden");
   document.getElementById("adminPanel").classList.add("hidden");
